@@ -1,14 +1,16 @@
+# Pls make sure to check all your imports make sense and compile, currently works on a windows system
 from psychopy import visual, core, event
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from pylsl import StreamInfo, StreamOutlet
 import random
 import os
 import csv
-import sys
-import glob
+import glob, sys, time, serial
 from serial import Serial
+from threading import Thread, Event
+from queue import Queue
 from threading import Event
-import time
+
 
 # Participant ID
 participant_id = input("Enter participant ID: ")
@@ -25,39 +27,41 @@ BAUD_RATE = 115200
 ANALOGUE_MODE = '/2'  # Reads from analog pins A5(D11), A6(D12), and A7(D13) if no WiFi shield is present.
 
 def find_openbci_port():
-    """Finds the port to which the Cyton Dongle is connected."""
-    if sys.platform.startswith('win'):
-        ports = ['COM%s' % (i + 1) for i in range(256)]
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        ports = glob.glob('/dev/ttyUSB*')
-    elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/cu.usbserial*')
-    else:
-        raise EnvironmentError('Error finding ports on your operating system')
-
-    openbci_port = ''
-    for port in ports:
-        try:
-            s = Serial(port=port, baudrate=BAUD_RATE, timeout=None)
-            s.write(b'v')
-            line = ''
-            time.sleep(2)
-            if s.inWaiting():
+        """Finds the port to which the Cyton Dongle is connected to."""
+        # Find serial port names per OS
+        if sys.platform.startswith('win'):
+            ports = ['COM%s' % (i + 1) for i in range(256)]
+        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+            ports = glob.glob('/dev/ttyUSB*')
+        elif sys.platform.startswith('darwin'):
+            ports = glob.glob('/dev/cu.usbserial*')
+        else:
+            raise EnvironmentError('Error finding ports on your operating system')
+        openbci_port = ''
+        for port in ports:
+            try:
+                s = Serial(port=port, baudrate=BAUD_RATE, timeout=None)
+                s.write(b'v')
                 line = ''
-                c = ''
-                while '$$$' not in line:
-                    c = s.read().decode('utf-8', errors='replace')
-                    line += c
-                if 'OpenBCI' in line:
-                    openbci_port = port
-            s.close()
-        except (OSError, serial.SerialException):
-            pass
-
-    if openbci_port == '':
-        raise OSError('Cannot find OpenBCI port.')
-    else:
-        return openbci_port
+                time.sleep(2)
+                if s.inWaiting():
+                    line = ''
+                    c = ''
+                    while '$$$' not in line:
+                        c = s.read().decode('utf-8', errors='replace')
+                        line += c
+                    if 'OpenBCI' in line:
+                        openbci_port = port
+                s.close()
+            except (OSError, serial.SerialException):
+                pass
+        if openbci_port == '':
+            raise OSError('Cannot find OpenBCI port.')
+            exit()
+        else:
+            return openbci_port
+        
+print(BoardShim.get_board_descr(CYTON_BOARD_ID))
 
 # Initialize BrainFlow for OpenBCI
 params = BrainFlowInputParams()
