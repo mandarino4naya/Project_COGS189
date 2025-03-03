@@ -4,11 +4,8 @@ from pylsl import StreamInfo, StreamOutlet
 import random
 import os
 import csv
-import sys
-import glob
+import glob, sys, time, serial
 from serial import Serial
-from threading import Event
-import time
 
 # Participant ID
 participant_id = input("Enter participant ID: ")
@@ -90,13 +87,26 @@ text_stim = visual.TextStim(win, color='black', height=40)
 crosshair = visual.TextStim(win, text='+', color='black', height=60)
 
 # Baseline EEG data collection
-print("Starting 30-second baseline EEG data collection...")
+baseline_message = visual.TextStim(win, text="Starting 30-second baseline EEG data collection...", color='black', height=30)
+baseline_message.draw()
+win.flip()
+core.wait(3)
 outlet.push_sample([999])  # Marker for start of baseline
 board.start_stream()  # Start the EEG stream
-core.wait(30)  # Wait for 30 seconds to collect baseline data
-baseline_eeg_data = board.get_board_data()  # Retrieve baseline EEG data
-board.stop_stream()  # Stop the EEG stream after baseline collection
-outlet.push_sample([1000])  # Marker for end of baseline
+
+# Wait for 30 seconds to collect baseline data while displaying the crosshair
+start_time = core.getTime()
+while core.getTime() - start_time < 30:
+    crosshair.draw()
+    win.flip()
+    core.wait(0.1)  # Small delay to avoid overloading the CPU
+
+# Retrieve baseline EEG data
+baseline_eeg_data = board.get_board_data()
+
+# Stop the EEG stream after baseline collection
+board.stop_stream()
+outlet.push_sample([1000]) # Marker for end of baseline
 
 # Save baseline EEG data to a separate CSV file
 baseline_eeg_data_file = os.path.join(results_folder, "baseline_eeg_data.csv")
@@ -108,7 +118,10 @@ with open(baseline_eeg_data_file, mode='w', newline='') as file:
     for row in baseline_eeg_data.T:  # Transpose to write row-wise
         writer.writerow(row)
 
-print("Baseline EEG data collection complete. Starting the main experiment...")
+baseline_complete_message = visual.TextStim(win, text="Baseline EEG data collection complete. Starting the main experiment...", color='black', height=30)
+baseline_complete_message.draw()
+win.flip()
+core.wait(3)
 
 # Experiment parameters
 n_trials = 30

@@ -25,7 +25,6 @@ ANALOGUE_MODE = '/2'  # Reads from analog pins A5(D11), A6(D12), and A7(D13) if 
 
 def find_openbci_port():
     """Finds the port to which the Cyton Dongle is connected to."""
-    # Find serial port names per OS
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
@@ -99,14 +98,29 @@ win = visual.Window(size=(800, 600), color='white', units='pix')
 text_stim = visual.TextStim(win, color='black', height=40)
 crosshair = visual.TextStim(win, text='+', color='black', height=60)
 
+
+
 # Baseline EEG data collection
-print("Starting 30-second baseline EEG data collection...")
+baseline_message = visual.TextStim(win, text="Starting 30-second baseline EEG data collection...", color='black', height=30)
+baseline_message.draw()
+win.flip()
+core.wait(3)
 outlet.push_sample([999])  # Marker for start of baseline
 board.start_stream()  # Start the EEG stream
-core.wait(30)  # Wait for 30 seconds to collect baseline data
-baseline_eeg_data = board.get_board_data()  # Retrieve baseline EEG data
-board.stop_stream()  # Stop the EEG stream after baseline collection
-outlet.push_sample([1000])  # Marker for end of baseline
+
+# Wait for 30 seconds to collect baseline data while displaying the crosshair
+start_time = core.getTime()
+while core.getTime() - start_time < 30:
+    crosshair.draw()
+    win.flip()
+    core.wait(0.1)  # Small delay to avoid overloading the CPU
+
+# Retrieve baseline EEG data
+baseline_eeg_data = board.get_board_data()
+
+# Stop the EEG stream after baseline collection
+board.stop_stream()
+outlet.push_sample([1000]) # Marker for end of baseline
 
 # Save baseline EEG data to a separate CSV file
 baseline_eeg_data_file = os.path.join(results_folder, "baseline_eeg_data.csv")
@@ -118,7 +132,10 @@ with open(baseline_eeg_data_file, mode='w', newline='') as file:
     for row in baseline_eeg_data.T:  # Transpose to write row-wise
         writer.writerow(row)
 
-print("Baseline EEG data collection complete. Starting the main experiment...")
+baseline_complete_message = visual.TextStim(win, text="Baseline EEG data collection complete. Starting the main experiment...", color='black', height=30)
+baseline_complete_message.draw()
+win.flip()
+core.wait(3)
 
 # Experiment parameters
 n_trials = 30
@@ -153,17 +170,14 @@ with open(stimulus_log_file, mode='w', newline='') as file:
     for trial in range(n_trials):
         word = words[trial]
         color = colors[trial % len(colors)]
-        win.color = color
         presented_words.append((word, color))
 
-        # Crosshair
-        win.color = 'white'
-        crosshair.draw()
-        win.flip()
-        core.wait(0.3)
+
+        # Set the background color
+        win.color = color
+        win.flip()  # Update the window to apply the background color
 
         # Present word
-        win.color = color
         text_stim.setText(word)
         text_stim.draw()
         win.flip()
@@ -180,11 +194,12 @@ with open(stimulus_log_file, mode='w', newline='') as file:
 
         # Blank screen
         win.color = 'white'
+        win.flip()  # Update the window to apply the white background
         crosshair.draw()
         win.flip()
         core.wait(blank_duration)
 
-        # Inter-trial interval
+        # Consistent inter-trial interval with crosshair (background remains white)
         crosshair.draw()
         win.flip()
         core.wait(iti)
