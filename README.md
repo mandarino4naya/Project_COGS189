@@ -19,3 +19,8 @@ If you use the same computer you would only need to run `pyenv\Scripts\activate`
 ## How to run experiment
 Run `python COGS189V2Updated.py` for colored background version.
 #TODO (need to fix script first) Run `python COGS189V1Updated.py` for colored words version
+
+### Color stuff
+Use this link to access #HEX for colors from image `glasses_color.jpg` of glasses: https://redketchup.io/color-picker 
+
+Can iterate color combinations later.

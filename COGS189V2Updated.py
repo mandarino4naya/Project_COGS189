@@ -1,5 +1,5 @@
 # Pls make sure to check all your imports make sense and compile, currently works on a Lab Windows system and M1 MacOS Sonoma 14+
-from psychopy import visual, core, event
+from psychopy import visual, core, event, monitors
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from pylsl import StreamInfo, StreamOutlet
 import random
@@ -94,7 +94,9 @@ info = StreamInfo('Markers', 'Markers', 1, 0, 'int32', 'marker_stream')
 outlet = StreamOutlet(info)
 
 # PsychoPy setup
-win = visual.Window(size=(800, 600), color='white', units='pix')
+mon = monitors.Monitor('DELL SE2422HX') # fetch the most recent calib for this monitor
+mon.save()
+win = visual.Window(size=(1920, 1080), color='white', units='pix', monitor=mon)
 text_stim = visual.TextStim(win, color='black', height=40)
 crosshair = visual.TextStim(win, text='+', color='black', height=60)
 
@@ -139,10 +141,11 @@ core.wait(3)
 
 # Experiment parameters
 n_trials = 30
-colors = ['red', 'blue']
+colors = ['#F1E05C', '#E7342F'] # yellow, red
 word_duration = 0.5
 blank_duration = 0.5
 iti = 1.5
+# edit the words later, mind the word count
 words = ['apple', 'banana', 'carrot', 'dog', 'elephant', 'fish', 'grape', 'house', 'ice', 'jacket',
          'kite', 'lemon', 'mango', 'nest', 'orange', 'pear', 'queen', 'rabbit', 'snake', 'tiger',
          'umbrella', 'violin', 'whale', 'xylophone', 'yacht', 'zebra', 'sink', 'cap', 'drawer', 'tissue']
@@ -228,6 +231,12 @@ core.wait(5)
 
 # Generate memory test items
 memory_test_items = []
+#TODO use this to map #HEX to human readable color names for memory test
+colors_d = {
+  colors[0]: "yellow",
+  colors[1]: "red",
+}
+#TODO rewrite color access here:
 for word, correct_color in random.sample(presented_words, 15):
     # Randomly decide whether to show the correct or incorrect color
     if random.choice([True, False]):  # 50% chance
