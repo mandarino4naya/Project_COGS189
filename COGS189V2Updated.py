@@ -7,6 +7,9 @@ import os
 import csv
 import glob, sys, time, serial
 from serial import Serial
+import nltk
+from nltk.corpus import words, stopwords, gutenberg
+from nltk import FreqDist
 
 # Participant ID
 participant_id = input("Enter participant ID: ")
@@ -146,9 +149,31 @@ word_duration = 0.5
 blank_duration = 0.5
 iti = 1.5
 # edit the words later, mind the word count
-words = ['apple', 'banana', 'carrot', 'dog', 'elephant', 'fish', 'grape', 'house', 'ice', 'jacket',
-         'kite', 'lemon', 'mango', 'nest', 'orange', 'pear', 'queen', 'rabbit', 'snake', 'tiger',
-         'umbrella', 'violin', 'whale', 'xylophone', 'yacht', 'zebra', 'sink', 'cap', 'drawer', 'tissue']
+
+nltk.download('words')
+nltk.download('stopwords')
+nltk.download('gutenberg')
+seed_value = 42  
+random.seed(seed_value)
+
+word_list = words.words()
+gutenberg_words = nltk.corpus.gutenberg.words()
+
+# Create a frequency distribution of words in the Gutenberg corpus
+freq_dist = FreqDist(gutenberg_words)
+stop_words = set(stopwords.words('english'))
+filtered_words = [
+    word.lower() for word in word_list 
+    if word.isalpha() and len(word) > 3 and word not in stop_words
+]
+
+# Sort the words by frequency in descending order
+medium_frequency_words = [
+    word for word in filtered_words if 50 < freq_dist[word] < 200
+]
+# Select the most common words
+
+words = random.sample(medium_frequency_words, 30)
 
 # Shuffle words
 random.shuffle(words)
@@ -247,19 +272,21 @@ for word, correct_color in random.sample(presented_words, 15):
         memory_test_items.append((word, incorrect_color))  # Incorrect color
 
 # Add 5 non-presented words (foil words) with random colors
-foil_words = [('cat', random.choice(colors)), ('boat', random.choice(colors)), 
-              ('shoe', random.choice(colors)), ('belt', random.choice(colors)), 
-              ('sock', random.choice(colors))]
+filtered_words = [word for word in medium_frequency_words if word not in words]
+random_foil_words = random.sample(filtered_words, 5)
+foil_words = [(word, random.choice(colors)) for word in random_foil_words]
 
 # Combine presented words and foil words, then shuffle
 memory_test_items += foil_words
 random.shuffle(memory_test_items)
 
 # Conduct memory test
+color_names = {'#F1E05C': 'yellow', '#E7342F': 'red'}
 correct_responses = 0
 memory_test_results = []  # Store memory test results
 for word, color in memory_test_items:
-    question = visual.TextStim(win, text=f"Did you see the word '{word}' with a {color} background? (Y/N)", color='black', height=30)
+    color_name = color_names[color]
+    question = visual.TextStim(win, text=f"Did you see the word '{word}' with a {color_name} background? (Y/N)", color='black', height=30)
     question.draw()
     win.flip()
 
