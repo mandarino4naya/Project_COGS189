@@ -141,10 +141,10 @@ core.wait(3)
 
 # Experiment parameters
 n_trials = 30
-colors = ['#F1E05C', '#E7342F'] # yellow, red
-word_duration = 0.5
+colors = ['#F1E05C', '#A6D5FF'] # yellow, blue
+word_duration = 4.0
 blank_duration = 0.5
-iti = 1.5
+iti = 1.0
 # edit the words later, mind the word count
 
 nltk.download('words')
