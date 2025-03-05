@@ -296,9 +296,9 @@ for word, color in memory_test_items:
         core.quit()
     elif (response[0] == 'y' and (word, color) in presented_words) or (response[0] == 'n' and (word, color) not in presented_words):
         correct_responses += 1
-        memory_test_results.append((word, color, response[0], "Correct"))
+        memory_test_results.append((word, color_name, response[0], "Correct"))
     else:
-        memory_test_results.append((word, color, response[0], "Incorrect"))
+        memory_test_results.append((word, color_name, response[0], "Incorrect"))
 
 # Save memory test results to a CSV file
 memory_test_file = os.path.join(results_folder, "memory_test_results.csv")

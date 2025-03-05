@@ -1,4 +1,4 @@
-from psychopy import visual, core, event
+from psychopy import visual, core, event,monitors
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from pylsl import StreamInfo, StreamOutlet
 import random
@@ -6,6 +6,9 @@ import os
 import csv
 import glob, sys, time, serial
 from serial import Serial
+import nltk
+from nltk.corpus import words, stopwords, gutenberg
+from nltk import FreqDist
 
 # Participant ID
 participant_id = input("Enter participant ID: ")
@@ -18,11 +21,12 @@ if not os.path.exists(results_folder):
 # Cyton board setup
 sampling_rate = 250
 CYTON_BOARD_ID = 0  # 0 if no daisy, 2 if using daisy board, 6 if using daisy + WiFi shield
+SYNTHETIC_BOARD_ID = BoardIds.SYNTHETIC_BOARD.value
 BAUD_RATE = 115200
 ANALOGUE_MODE = '/2'  # Reads from analog pins A5(D11), A6(D12), and A7(D13) if no WiFi shield is present.
 
 def find_openbci_port():
-    """Finds the port to which the Cyton Dongle is connected."""
+    """Finds the port to which the Cyton Dongle is connected to."""
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
@@ -31,7 +35,6 @@ def find_openbci_port():
         ports = glob.glob('/dev/cu.usbserial*')
     else:
         raise EnvironmentError('Error finding ports on your operating system')
-
     openbci_port = ''
     for port in ports:
         try:
@@ -50,29 +53,40 @@ def find_openbci_port():
             s.close()
         except (OSError, serial.SerialException):
             pass
-
     if openbci_port == '':
-        raise OSError('Cannot find OpenBCI port.')
+        print("OpenBCI port not found, proceeding with a synthetic board.")  # EDITED
+        return None  # EDITED
     else:
         return openbci_port
 
-# Initialize BrainFlow for OpenBCI
+# Initialize BrainFlow for OpenBCI or Synthetic board
 params = BrainFlowInputParams()
-if CYTON_BOARD_ID != 6:
-    params.serial_port = find_openbci_port()
-else:
-    params.ip_port = 9000
+detected_port = find_openbci_port()  # EDITED
 
-board = BoardShim(CYTON_BOARD_ID, params)
+if detected_port is None:  # EDITED
+    board_id = SYNTHETIC_BOARD_ID  # EDITED
+    print(BoardShim.get_board_descr(SYNTHETIC_BOARD_ID))
+else:  # EDITED
+    board_id = CYTON_BOARD_ID  # EDITED
+    print(BoardShim.get_board_descr(CYTON_BOARD_ID))
+    # If using WiFi shield or otherwise, set params accordingly
+    if CYTON_BOARD_ID != 6:  # Keep your original logic
+        params.serial_port = detected_port
+    else:
+        params.ip_port = 9000
+
+board = BoardShim(board_id, params)  # EDITED
 
 try:
     board.prepare_session()
-    res_query = board.config_board('/0')
-    print(res_query)
-    res_query = board.config_board('//')
-    print(res_query)
-    res_query = board.config_board(ANALOGUE_MODE)
-    print(res_query)
+    # Configure board only if it's the actual Cyton (not synthetic)
+    if board_id == CYTON_BOARD_ID:  # EDITED
+        res_query = board.config_board('/0')
+        print(res_query)
+        res_query = board.config_board('//')
+        print(res_query)
+        res_query = board.config_board(ANALOGUE_MODE)
+        print(res_query)
 except Exception as e:
     print(f"Error initializing OpenBCI: {e}")
     core.quit()
@@ -82,7 +96,9 @@ info = StreamInfo('Markers', 'Markers', 1, 0, 'int32', 'marker_stream')
 outlet = StreamOutlet(info)
 
 # PsychoPy setup
-win = visual.Window(size=(800, 600), color='white', units='pix')
+mon = monitors.Monitor('DELL SE2422HX') # fetch the most recent calib for this monitor
+mon.save()
+win = visual.Window(size=(1920, 1080), color='white', units='pix', monitor=mon)
 text_stim = visual.TextStim(win, color='black', height=40)
 crosshair = visual.TextStim(win, text='+', color='black', height=60)
 
@@ -125,13 +141,36 @@ core.wait(3)
 
 # Experiment parameters
 n_trials = 30
-colors = ['red', 'blue']
+colors = ['#F1E05C', '#E7342F'] # yellow, red
 word_duration = 0.5
 blank_duration = 0.5
 iti = 1.5
-words = ['apple', 'banana', 'carrot', 'dog', 'elephant', 'fish', 'grape', 'house', 'ice', 'jacket',
-         'kite', 'lemon', 'mango', 'nest', 'orange', 'pear', 'queen', 'rabbit', 'snake', 'tiger',
-         'umbrella', 'violin', 'whale', 'xylophone', 'yacht', 'zebra', 'sink', 'cap', 'drawer', 'tissue']
+# edit the words later, mind the word count
+
+nltk.download('words')
+nltk.download('stopwords')
+nltk.download('gutenberg')
+seed_value = 42  
+random.seed(seed_value)
+
+word_list = words.words()
+gutenberg_words = nltk.corpus.gutenberg.words()
+
+# Create a frequency distribution of words in the Gutenberg corpus
+freq_dist = FreqDist(gutenberg_words)
+stop_words = set(stopwords.words('english'))
+filtered_words = [
+    word.lower() for word in word_list 
+    if word.isalpha() and len(word) > 3 and word not in stop_words
+]
+
+# Sort the words by frequency in descending order
+medium_frequency_words = [
+    word for word in filtered_words if 50 < freq_dist[word] < 200
+]
+# Select the most common words
+
+words = random.sample(medium_frequency_words, 30)
 
 # Shuffle words
 random.shuffle(words)
@@ -221,19 +260,23 @@ for word, correct_color in random.sample(presented_words, 15):
         memory_test_items.append((word, incorrect_color))  # Incorrect color
 
 # Add 5 non-presented words (foil words) with random colors
-foil_words = [('cat', random.choice(colors)), ('boat', random.choice(colors)), 
-              ('shoe', random.choice(colors)), ('belt', random.choice(colors)), 
-              ('sock', random.choice(colors))]
+filtered_words = [word for word in medium_frequency_words if word not in words]
+random_foil_words = random.sample(filtered_words, 5)
+foil_words = [(word, random.choice(colors)) for word in random_foil_words]
 
 # Combine presented words and foil words, then shuffle
 memory_test_items += foil_words
 random.shuffle(memory_test_items)
 
 # Conduct memory test
+color_names = {'#F1E05C': 'yellow', '#E7342F': 'red'}
+
+# Conduct memory test
 correct_responses = 0
 memory_test_results = []  # Store memory test results
 for word, color in memory_test_items:
-    question = visual.TextStim(win, text=f"Did you see the word '{word}' with a {color} background? (Y/N)", color='black', height=30)
+    color_name = color_names[color]
+    question = visual.TextStim(win, text=f"Did you see the word '{word}' with a {color_name} background? (Y/N)", color='black', height=30)
     question.draw()
     win.flip()
 
@@ -243,9 +286,9 @@ for word, color in memory_test_items:
         core.quit()
     elif (response[0] == 'y' and (word, color) in presented_words) or (response[0] == 'n' and (word, color) not in presented_words):
         correct_responses += 1
-        memory_test_results.append((word, color, response[0], "Correct"))
+        memory_test_results.append((word, color_name, response[0], "Correct"))
     else:
-        memory_test_results.append((word, color, response[0], "Incorrect"))
+        memory_test_results.append((word, color_name, response[0], "Incorrect"))
 
 # Save memory test results to a CSV file
 memory_test_file = os.path.join(results_folder, "memory_test_results.csv")
