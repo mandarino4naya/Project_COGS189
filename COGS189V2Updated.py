@@ -1,7 +1,9 @@
 # Pls make sure to check all your imports make sense and compile, currently works on a Lab Windows system and M1 MacOS Sonoma 14+
 from psychopy import visual, core, event, monitors
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
+from brainflow.data_filter import DataFilter
 from pylsl import StreamInfo, StreamOutlet
+from pprint import pprint
 import random
 import os
 import csv
@@ -66,10 +68,10 @@ detected_port = find_openbci_port()  # EDITED
 
 if detected_port is None:  # EDITED
     board_id = SYNTHETIC_BOARD_ID  # EDITED
-    print(BoardShim.get_board_descr(SYNTHETIC_BOARD_ID))
+    pprint(BoardShim.get_board_descr(SYNTHETIC_BOARD_ID))
 else:  # EDITED
     board_id = CYTON_BOARD_ID  # EDITED
-    print(BoardShim.get_board_descr(CYTON_BOARD_ID))
+    pprint(BoardShim.get_board_descr(CYTON_BOARD_ID))
     # If using WiFi shield or otherwise, set params accordingly
     if CYTON_BOARD_ID != 6:  # Keep your original logic
         params.serial_port = detected_port
@@ -126,6 +128,13 @@ baseline_eeg_data = board.get_board_data()
 # Stop the EEG stream after baseline collection
 board.stop_stream()
 outlet.push_sample([1000]) # Marker for end of baseline
+
+# # Define the path for storing baseline data
+# baseline_eeg_data_file = os.path.join(results_folder, "baseline_eeg_data.csv")
+
+# # Use BrainFlow to write the baseline data directly to a CSV file
+# # 'w' overwrites any existing file; use 'a' to append
+# DataFilter.write_file(baseline_eeg_data, baseline_eeg_data_file, 'w')
 
 # Save baseline EEG data to a separate CSV file
 baseline_eeg_data_file = os.path.join(results_folder, "baseline_eeg_data.csv")
@@ -236,6 +245,13 @@ with open(stimulus_log_file, mode='w', newline='') as file:
     eeg_data = board.get_board_data()  # Retrieve all collected EEG data
     board.stop_stream()
     board.release_session()
+
+# # Define the path for storing baseline data
+# eeg_data_file = os.path.join(results_folder, "eeg_data.csv")
+
+# # Use BrainFlow to write the baseline data directly to a CSV file
+# # 'w' overwrites any existing file; use 'a' to append
+# DataFilter.write_file(eeg_data, eeg_data_file, 'w')
 
 # Save EEG data to a CSV file
 eeg_data_file = os.path.join(results_folder, "eeg_data.csv")
