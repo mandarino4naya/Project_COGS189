@@ -152,7 +152,7 @@ win.flip()
 core.wait(3)
 
 # Experiment parameters
-n_trials = 30
+n_trials = 100
 colors = ['#F1E05C', '#A6D5FF'] # yellow, blue
 word_duration = 4.0
 blank_duration = 0.5
@@ -182,7 +182,7 @@ medium_frequency_words = [
 ]
 # Select the most common words
 
-words = random.sample(medium_frequency_words, 30)
+words = random.sample(medium_frequency_words, 100)
 
 # Shuffle words
 random.shuffle(words)
