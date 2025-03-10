@@ -275,7 +275,7 @@ memory_test_items = []
 #TODO use this to map #HEX to human readable color names for memory test
 colors_d = {
   colors[0]: "yellow",
-  colors[1]: "red",
+  colors[1]: "blue",
 }
 #TODO rewrite color access here:
 for word, correct_color in random.sample(presented_words, 15):
@@ -297,7 +297,7 @@ memory_test_items += foil_words
 random.shuffle(memory_test_items)
 
 # Conduct memory test
-color_names = {'#F1E05C': 'yellow', '#E7342F': 'red'}
+color_names = {'#F1E05C': 'yellow', '#A6D5FF': 'blue'}
 correct_responses = 0
 memory_test_results = []  # Store memory test results
 for word, color in memory_test_items:
