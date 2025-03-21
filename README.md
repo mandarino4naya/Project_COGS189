@@ -1,26 +1,30 @@
 # Project_COGS189
-Scripts for COGS 189 Project with EEG data collection
 
 ## How to setup env
 For running on lab windows computer:
 
-### Environment setup for Windows Lab machine:
+### Environment setup for UCSD Windows Lab machine:
 1) `& C:/Users/apecherskaya/AppData/Local/Microsoft/WindowsApps/python3.11.exe -m pip install virtualenv`
 2) `& C:/Users/apecherskaya/AppData/Local/Microsoft/WindowsApps/python3.11.exe -m virtualenv pyenv --python=3.11.9`
 3) `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 4) `pyenv\Scripts\activate`
 
-If you use the same computer you would only need to run `pyenv\Scripts\activate` (i think)
+If you use the same computer you would only need to run `pyenv\Scripts\activate`
 
-### Environment setup for MacOS (Apple Silicon compatible):
-1) Run this in terminal before running the scripts: `conda env create -f environment.yml`.
-2) Run `conda list | grep -E "^(psychopy|python|liblsl|brainflow)"` to ensure you have the required packages.
+### Environment setup for MacOS (Apple Silicon compatible): (Experimental)
+NB: Miniconda use for Apple Silicon ARM64 built Macs recommended
+Full env setup will be updated in the next release.
 
-## How to run experiment
-Run `python COGS189V2Updated.py` for colored background version.
-#TODO (need to fix script first) Run `python COGS189V1Updated.py` for colored words version
+## Recommended libraries and versions
+- Python 3.9, 3.10 or 3.11 recommended
+- Requires MNE-Python with qt for GUI backend if you want to have nice visuals of your raw EEG and annotate for artifacts manually, NOT matplotlib
+- Should be compatible even with the newest PsychoPy version
 
-### Color stuff
-Use this link to access #HEX for colors from image `glasses_color.jpg` of glasses: https://redketchup.io/color-picker 
+### How to run experiment
+1) Run `python COGS189V2Updated.py` for colored background version. 
+2) Record your data with a real or virtual board.
+3) Run `python clean_data.py` and `python stim_cleanup.py` to clean stimulus log and eeg data.
+4) Run `python analyze.py` to do analysis, generate all plots and perform t-test.
 
-Can iterate color combinations later.
+## Color change (currently used: yellow VS blue)
+Use this link to access various #HEX for colors from image `glasses_color.jpg` of glasses: https://redketchup.io/color-picker
