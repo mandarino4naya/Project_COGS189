@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import mne
 from scipy.stats import ttest_ind
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 #### Load CSV into pd df ####
@@ -107,7 +108,56 @@ avg_beta_blue   = beta_power_blue.mean(axis=1)
 
 # Compare with a t-test
 t_stat, p_val = ttest_ind(avg_beta_yellow, avg_beta_blue)
+
 print(f"T-test (yellow vs. blue), t={t_stat:.3f}, p={p_val:.5f}")
+
+plt.figure(figsize=(8, 6))
+
+# Plot histograms for both groups
+sns.histplot(avg_beta_yellow, color='red', kde=True, label='Yellow', stat='density', linewidth=0)
+sns.histplot(avg_beta_blue, color='blue', kde=True, label='Blue', stat='density', linewidth=0)
+
+
+# Labels and title
+plt.xlabel('Beta Value')
+plt.ylabel('Density')
+plt.title('Distribution of Beta Values for Yellow and Blue')
+
+legend = plt.legend()
+
+# Show plot
+plt.show()
+
+
+# For alpha waves(switch beta mask to to 8 and 12): 
+# outlier_threshold = 100
+# avg_beta_blue_clean = avg_beta_blue[avg_beta_blue <= outlier_threshold]
+
+# # Compare with a t-test
+# t_stat, p_val = ttest_ind(avg_beta_yellow, avg_beta_blue)
+
+# print(f"T-test (yellow vs. blue), t={t_stat:.3f}, p={p_val:.5f}")
+
+# plt.figure(figsize=(8, 6))
+
+# # Plot histograms for both groups
+# sns.histplot(avg_beta_yellow, color='red', kde=True, label='Yellow', stat='density', linewidth=0)
+# sns.histplot(avg_beta_blue_clean, color='blue', kde=True, label='Blue', stat='density', linewidth=0,)  # Adjusting KDE bandwidth
+
+# # Labels and title
+# plt.xlabel('Alpha Value')
+# plt.ylabel('Density')
+# plt.title('Distribution of Alpha Values for Yellow and Blue')
+
+# # Set x-axis limits
+# plt.xlim(0, 30)
+
+# # Show the legend
+# plt.legend()
+
+# #Show plot
+
+# plt.show()
 
 #### Wavelets ####
 freqs = np.arange(2, 45, 1)
